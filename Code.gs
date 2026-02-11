@@ -79,7 +79,7 @@ function openSheetByUrl(sheetUrl) {
   // ตรวจสอบสิทธิ์เข้าถึงไฟล์ผ่าน DriveApp ก่อน
   try {
     var file = DriveApp.getFileById(spreadsheetId);
-    Logger.log('พบไฟล์: ' + file.getName() + ' (สิทธิ์: ' + file.getAccess(Session.getEffectiveUser()) + ')');
+    Logger.log('พบไฟล์: ' + file.getName() + ' (แก้ไขได้: ' + file.isEditable() + ')');
   } catch (driveError) {
     throw new Error(
       'ไม่มีสิทธิ์เข้าถึงไฟล์ (ID: ' + spreadsheetId + ') — ' +
@@ -273,9 +273,13 @@ function testPermission() {
   try {
     var file = DriveApp.getFileById(spreadsheetId);
     Logger.log('ชื่อไฟล์: ' + file.getName());
-    Logger.log('เจ้าของ: ' + file.getOwner().getEmail());
-    Logger.log('สิทธิ์ปัจจุบัน: ' + file.getAccess(Session.getEffectiveUser()));
     Logger.log('สามารถแก้ไขได้: ' + file.isEditable());
+    try {
+      Logger.log('เจ้าของ: ' + file.getOwner().getEmail());
+      Logger.log('สิทธิ์ปัจจุบัน: ' + file.getAccess(Session.getEffectiveUser()));
+    } catch (permErr) {
+      Logger.log('ไม่สามารถดึงข้อมูลผู้ใช้ได้ (ปกติเมื่อรันจาก Automation): ' + permErr.toString());
+    }
 
     var ss = SpreadsheetApp.openById(spreadsheetId);
     var sheets = ss.getSheets();
@@ -291,7 +295,7 @@ function testPermission() {
     Logger.log('วิธีแก้ไข:');
     Logger.log('1. เปิด Google Sheets ที่ต้องการ');
     Logger.log('2. คลิก "Share" (แชร์)');
-    Logger.log('3. เพิ่ม email ของ script owner: ' + Session.getEffectiveUser().getEmail());
+    Logger.log('3. เพิ่ม email ของ script owner (ดูจาก Project Settings > Owner)');
     Logger.log('4. ให้สิทธิ์ "Editor"');
   }
 }
