@@ -79,7 +79,7 @@ function openSheetByUrl(sheetUrl) {
   // ตรวจสอบสิทธิ์เข้าถึงไฟล์ผ่าน DriveApp ก่อน
   try {
     var file = DriveApp.getFileById(spreadsheetId);
-    Logger.log('พบไฟล์: ' + file.getName() + ' (แก้ไขได้: ' + file.isEditable() + ')');
+    Logger.log('พบไฟล์: ' + file.getName());
   } catch (driveError) {
     throw new Error(
       'ไม่มีสิทธิ์เข้าถึงไฟล์ (ID: ' + spreadsheetId + ') — ' +
@@ -273,7 +273,8 @@ function testPermission() {
   try {
     var file = DriveApp.getFileById(spreadsheetId);
     Logger.log('ชื่อไฟล์: ' + file.getName());
-    Logger.log('สามารถแก้ไขได้: ' + file.isEditable());
+    Logger.log('Sharing access: ' + file.getSharingAccess());
+    Logger.log('Sharing permission: ' + file.getSharingPermission());
     try {
       Logger.log('เจ้าของ: ' + file.getOwner().getEmail());
       Logger.log('สิทธิ์ปัจจุบัน: ' + file.getAccess(Session.getEffectiveUser()));
