@@ -1,16 +1,54 @@
 /**
+ * ทำความสะอาดและ normalize URL ของ Google Sheets
+ * รองรับหลายรูปแบบ:
+ *   - https://docs.google.com/spreadsheets/d/ID
+ *   - https://docs.google.com/spreadsheets/d/ID/edit
+ *   - https://docs.google.com/spreadsheets/d/ID/edit?gid=123#gid=123
+ *   - ID ตรงๆ (ไม่มี URL)
+ *
+ * @param {string} url - URL หรือ ID ของ Google Sheets
+ * @return {string} URL ที่ normalize แล้ว
+ */
+function normalizeSheetUrl(url) {
+  if (!url) return url;
+
+  url = url.trim();
+
+  // ถ้าเป็น ID ตรงๆ (ไม่มี / หรือ http) ให้สร้าง URL เต็ม
+  if (!url.includes('/') && !url.includes('http')) {
+    return 'https://docs.google.com/spreadsheets/d/' + url + '/edit';
+  }
+
+  // ถ้า URL ไม่มี /edit ให้เติม /edit ต่อท้าย
+  // เช่น https://docs.google.com/spreadsheets/d/ID → .../d/ID/edit
+  if (url.match(/\/d\/[a-zA-Z0-9_-]+\/?$/) && !url.includes('/edit')) {
+    url = url.replace(/\/?$/, '/edit');
+  }
+
+  return url;
+}
+
+/**
  * ดึง Spreadsheet ID จาก URL
- * รองรับทั้ง URL แบบ /d/ID/edit และ /d/ID
+ * รองรับทั้ง URL แบบ /d/ID/edit, /d/ID, หรือ ID ตรงๆ
  *
  * @param {string} url - URL ของ Google Sheets
  * @return {string} Spreadsheet ID
  */
 function extractSpreadsheetId(url) {
+  // ลอง match จาก URL pattern ก่อน
   var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (!match) {
-    throw new Error('ไม่สามารถดึง Spreadsheet ID จาก URL: ' + url);
+  if (match) {
+    return match[1];
   }
-  return match[1];
+
+  // ถ้าไม่ match อาจเป็น ID ตรงๆ
+  var idMatch = url.trim().match(/^[a-zA-Z0-9_-]+$/);
+  if (idMatch) {
+    return idMatch[0];
+  }
+
+  throw new Error('ไม่สามารถดึง Spreadsheet ID จาก URL: ' + url);
 }
 
 /**
@@ -32,6 +70,10 @@ function extractGid(url) {
  * @return {GoogleAppsScript.Spreadsheet.Sheet} Sheet object
  */
 function openSheetByUrl(sheetUrl) {
+  // Normalize URL ก่อน — รองรับ URL แบบสั้น (ไม่มี /edit) หรือ ID ตรงๆ
+  sheetUrl = normalizeSheetUrl(sheetUrl);
+  Logger.log('URL หลัง normalize: ' + sheetUrl);
+
   var spreadsheetId = extractSpreadsheetId(sheetUrl);
 
   // ตรวจสอบสิทธิ์เข้าถึงไฟล์ผ่าน DriveApp ก่อน
@@ -200,6 +242,22 @@ function testUpdatePartialApprovers() {
   );
 
   Logger.log('Result: ' + result);
+}
+
+/**
+ * ฟังก์ชันทดสอบ URL แบบสั้น (ไม่มี /edit?gid=...)
+ */
+function testUpdateShortUrl() {
+  var result = updateApprovalFromAppSheet(
+    'https://docs.google.com/spreadsheets/d/12Y8PouhDXjq36wviIZrqn5ULdZBA02vGSuymHBKNht8',
+    'Jansawang Satitpong', '2026-01-14 15:44:21',
+    'Tansiri Natnicha', '2026-01-15 08:49:18',
+    'Kumya Somrudee', '2026-01-15 08:45:08',
+    '', '',
+    '', ''
+  );
+
+  Logger.log('Result (short URL): ' + result);
 }
 
 /**
